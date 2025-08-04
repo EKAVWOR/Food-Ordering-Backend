@@ -4,6 +4,8 @@ import cors  from  "cors";
 import mongoose from "mongoose";
 import routes from "./route/Route.js"
 import bodyParser from "body-parser";
+import { fileURLToPath } from "url";
+import path from "path";  
 
 // import  connectDB from "./config/db";
 const app = express();
@@ -15,6 +17,16 @@ app.use(express.urlencoded({ limit: "50mb" }))
 //parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
+
+
+
+// ✅ These two lines are needed when using ES modules to get __dirname:
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ✅ This line makes your /uploads folder publicly accessible:
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 mongoose.set("strictQuery", false)
@@ -39,7 +51,7 @@ app.get("/", (req, res) => {
 
 app.use("/api", routes)
 app.listen(PORT, () => {
-    console.log(`server is runnin on port ${PORT}`);
+    console.log(`server is running on port ${PORT}`);
 })
 
 

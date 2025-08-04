@@ -1,6 +1,9 @@
 import e from "express";
 import sendEmail from "../utils/sendEmail.js";
-import order from "../model/Order.js";
+import Order from "../model/Order.js";
+
+
+
 export const orderFood = async (req, res) => {
     try {
         const {
@@ -15,7 +18,7 @@ export const orderFood = async (req, res) => {
               
         } = req.body
 
-        const neworder = new order ({
+        const neworder = new Order ({
             customerName : customerName,
             foodItem: foodItem,
             quantity: quantity,
@@ -28,6 +31,13 @@ export const orderFood = async (req, res) => {
 
         })
 await neworder.save()
+
+
+
+ const foodItemsString = req.body.foodItem
+      .map((item) => `${item.name} (x${item.quantity})`)
+      .join(", ");
+
 const message = `<table>
         <tbody>
         <tr>
@@ -47,7 +57,7 @@ const message = `<table>
         <li>
         your reference number ${req.body.userId}
         </li>
-        <li> Food-Item: ${req.body.foodItem} 
+        <li> Food-Item: ${foodItemsString} 
         </li>
         <li>
         Quantity: ${req.body.quantity}
@@ -77,7 +87,7 @@ const message = `<table>
     }
     export const fetchCert = async (req, res) => {
         try {
-            let users = await order.find().select(
+            let users = await Order.find().select(
                 "orderTime customerName foodItem deliveryAddress userId status quantity email"
             );
             //Sending the fetched users as a response
@@ -85,4 +95,56 @@ const message = `<table>
         }catch{
             return res.status(403).json({ msg: "Error in Fetching Users" });
     }
+};
+
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("Updating order with id:", id);
+
+    const { status } = req.body;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ msg: "Order not found" });
+    }
+
+    order.status = status;
+    await order.save();
+
+    return res.status(200).json({ msg: "Order status updated", order });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ msg: "Server error" });
+  }
+};
+
+export const getUserOrders = async (req, res) => {
+  try {
+    const { userId } = req.params; // or req.query
+    const orders = await Order.find({ userId: userId });
+    return res.status(200).json({ orders });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ msg: "Server error fetching orders." });
+  }
+};
+
+// Delete Order by ID
+export const deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ msg: "Order not found" });
+    }
+
+    await Order.findByIdAndDelete(id);
+
+    return res.status(200).json({ msg: "Order deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ msg: "Server error while deleting order" });
+  }
 };
