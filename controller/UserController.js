@@ -92,7 +92,7 @@ export const signin = async (req, res) => {
     if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
       const token = jwt.sign(
         { role: "admin" },
-        "JQULYSXL12345",
+        process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
       return res.status(200).json({
@@ -115,7 +115,7 @@ export const signin = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.userId, role: "user" },
-      "JQULYSXL12345",
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
@@ -142,20 +142,24 @@ export const signin = async (req, res) => {
 
 
 
-   export const fetchuser = async (req, res) => {
+
+
+export const fetchUserById = async (req, res) => {
   try {
-    let users = await User.find().select("username email");
-    return res.status(200).json({ users });
+    const userIdParam = req.params.id;
+    console.log("🔍 Looking for user with userId:", userIdParam);
+
+    // Find by the custom userId field, NOT the MongoDB _id
+    const user = await User.findOne({ userId: userIdParam }).select("username email");
+
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    return res.status(200).json({ user });
+
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ msg: "Error in Fetching Users" });
+    console.error("❌ Error fetching user by custom userId:", error.message);
+    return res.status(500).json({ msg: "Error fetching user" });
   }
-
-
-
-
-
-
-
-
-} 
+};
